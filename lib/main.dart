@@ -30,7 +30,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Soundsun',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
+      theme: ThemeData(
+        primaryColor: Colors.blueAccent,
         scaffoldBackgroundColor: const Color(0xFF0D0D14),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF7C5CFF),

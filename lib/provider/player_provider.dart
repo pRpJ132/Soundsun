@@ -11,6 +11,17 @@ class PlayerProvider extends ChangeNotifier {
   AudioPlayer get player => _player;
   TrackSearchResult? get currentTrack => _currentTrack;
 
+  PlayerProvider() {
+    _player.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed &&
+          _player.playing) {
+        print("Музыка закончилась!");
+        _currentTrack = null;
+        notifyListeners();
+      }
+    });
+  }
+
   set currentTrack(TrackSearchResult ct) {
     _currentTrack = ct;
     notifyListeners();

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -144,6 +146,7 @@ class _ScreenHomeState extends State<ScreenHome> {
     final provider = context.watch<PlayerProvider>();
 
     return Scaffold(
+      backgroundColor: const Color.fromARGB(99, 0, 0, 0),
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -157,7 +160,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               hintStyle: const TextStyle(color: Colors.white60),
               prefixIcon: const Icon(Icons.search, color: Colors.white70),
               filled: true,
-              fillColor: const Color(0xFF1C1C2A),
+              fillColor: const Color.fromARGB(94, 28, 28, 42),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(32),
                 borderSide: BorderSide.none,
@@ -226,10 +229,14 @@ class _ScreenHomeState extends State<ScreenHome> {
                             final track = _tracks[i];
                             final isPlaying = provider.currentTrack?.id == track.id;
                 
-                            return Card(
+                            return Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                color: isPlaying ? 
+                                const Color.fromARGB(134, 43, 36, 76) : 
+                                const Color.fromARGB(134, 57, 56, 61),
+                              ),
                               margin: const EdgeInsets.symmetric(vertical: 4),
-                              color: isPlaying ? const Color(0xFF2A2540) : null,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: const Color(0xFF2A2A3A),
@@ -245,7 +252,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                                   style: const TextStyle(color: Colors.white70),
                                 ),
                                 trailing: isPlaying
-                                    ? const Icon(CupertinoIcons.speaker_2, color: Color(0xFF7C5CFF))
+                                    ? const Icon(CupertinoIcons.speaker_2_fill, color: Color(0xFF7C5CFF))
                                     : null,
                                 onTap: () => _playTrack(track, provider),
                               ),

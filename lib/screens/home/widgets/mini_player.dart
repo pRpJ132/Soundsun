@@ -44,8 +44,6 @@ class _MiniPlayerState extends State<MiniPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
     final provider = context.watch<PlayerProvider>();
     
     return Container(
@@ -77,9 +75,9 @@ class _MiniPlayerState extends State<MiniPlayer> {
                     data: SliderThemeData(
                       trackHeight: 3,
                       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                      activeTrackColor: primary,
+                      activeTrackColor: const Color.fromARGB(255, 60, 49, 109),
                       inactiveTrackColor: Colors.white12,
-                      thumbColor: primary,
+                      thumbColor: const Color.fromARGB(255, 75, 60, 138),
                     ),
                     child: Slider(
                       value: progress.clamp(0.0, 1.0),
@@ -109,7 +107,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
               IconButton(
                 iconSize: 42,
                 icon: Icon(
-                  provider.player.playing ? CupertinoIcons.pause_solid : CupertinoIcons.play,
+                  provider.player.playing ? CupertinoIcons.pause_solid : CupertinoIcons.play_arrow_solid,
                   color: Colors.white,
                 ),
                 onPressed: () async {
