@@ -270,7 +270,9 @@ class _ScreenHomeState extends State<ScreenHome> {
                     opacity: provider.currentTrack != null ? 1 : 0,
                     duration: Duration(milliseconds: 1050),
                     child: AnimatedSlide(
-                      offset: provider.currentTrack != null ? Offset(0, 0) : Offset(0, 10),
+                      offset: provider.currentTrack != null ? 
+                      provider.hideMiniApp ? Offset(0, 0.15) : Offset(0, 0) 
+                      : Offset(0, 10),
                       duration: Duration(milliseconds: 550),
                       curve: Curves.ease,
                       child: provider.currentTrack != null 

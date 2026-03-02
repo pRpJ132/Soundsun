@@ -7,11 +7,13 @@ class PlayerProvider extends ChangeNotifier {
   final _player = AudioPlayer();
   TrackSearchResult? _currentTrack;
   final List<TrackSearchResult> _tracks = [];
+  bool _hideMiniApp = false;
   
   SoundcloudClient get client => _client;
   AudioPlayer get player => _player;
   TrackSearchResult? get currentTrack => _currentTrack;
   List<TrackSearchResult> get tracks => _tracks;
+  bool get hideMiniApp => _hideMiniApp;
 
   PlayerProvider() {
     _player.playerStateStream.listen((state) async {
@@ -36,6 +38,12 @@ class PlayerProvider extends ChangeNotifier {
       }
     });
   }
+
+  set hideMiniApp(bool value) {
+    _hideMiniApp = value;
+    notifyListeners();
+  }
+
 
   set currentTrack(TrackSearchResult ct) {
     _currentTrack = ct;

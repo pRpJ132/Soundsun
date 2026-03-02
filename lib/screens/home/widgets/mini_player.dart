@@ -60,12 +60,15 @@ class _MiniPlayerState extends State<MiniPlayer> {
               ),
             ),
             backgroundColor: WidgetStateProperty.all(
-            const Color.fromARGB(255, 26, 26, 36).withOpacity(0.85)
+            const Color.fromARGB(150, 26, 26, 36).withOpacity(0.85)
             )
           ),
-          onPressed: () {}, 
+          onPressed: () => provider.hideMiniApp = !provider.hideMiniApp,
           child: Icon(
-            CupertinoIcons.arrow_down_circle
+            !provider.hideMiniApp ? 
+            CupertinoIcons.arrow_down
+            : CupertinoIcons.arrow_up,
+            color: Colors.white,
           )
         ),
         Container(
