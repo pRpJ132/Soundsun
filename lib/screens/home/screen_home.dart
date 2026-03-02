@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -22,13 +21,14 @@ class _ScreenHomeState extends State<ScreenHome> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
 
-  final List<TrackSearchResult> _tracks = [];
   List<String> _searchHistory = [];
   bool _isLoading = false;
   bool _hasMore = true;
   String _currentQuery = '';
 
   StreamIterator<Iterable<SearchResult>>? _searchIterator;
+
+  bool hideMiniApp = false;
 
   Future<void> loadHistory() async {
     _searchHistory = (await UserPreferences.getHistoryUser())!;
@@ -39,7 +39,6 @@ class _ScreenHomeState extends State<ScreenHome> {
   void initState() {
     super.initState();
     loadHistory();
-    _performSearch('', SoundcloudClient());
   }
 
   void _addToHistory(String query) {
@@ -49,14 +48,15 @@ class _ScreenHomeState extends State<ScreenHome> {
     if (_searchHistory.length > 10) _searchHistory.removeLast();
   }
 
-  Future<void> _performSearch(String query, SoundcloudClient client) async {
+  Future<void> _performSearch(String query, SoundcloudClient client, List<TrackSearchResult> tracks) async {
     if (query.trim().isEmpty) return;
 
     _addToHistory(query);
     await UserPreferences.setHistoryUser(_searchHistory);
 
+    tracks.clear();
+
     setState(() {
-      _tracks.clear();
       _hasMore = true;
       _currentQuery = query;
       _isLoading = true;
@@ -72,12 +72,11 @@ class _ScreenHomeState extends State<ScreenHome> {
 
     _searchIterator = StreamIterator(stream);
 
-    await _loadNextPage();
+    await _loadNextPage(tracks);
   }
 
-  Future<void> _loadNextPage() async {
+  Future<void> _loadNextPage(List<TrackSearchResult> tracks) async {
     if (!_hasMore || _searchIterator == null) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -87,8 +86,9 @@ class _ScreenHomeState extends State<ScreenHome> {
             .whereType<TrackSearchResult>()
             .toList();
 
+        tracks.addAll(newTracks);
+
         setState(() {
-          _tracks.addAll(newTracks);
           _isLoading = false;
         });
       } else {
@@ -167,7 +167,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               ),
             ),
             onSubmitted: (v) {
-              _performSearch(v.trim(), provider.client);
+              _performSearch(v.trim(), provider.client, provider.tracks);
               FocusScope.of(context).unfocus();
             },
           ),
@@ -189,7 +189,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                             child: Text(query, style: const TextStyle(color: Colors.white70)),
                             onPressed: () {
                               _searchController.text = query;
-                              _performSearch(query, provider.client);
+                              _performSearch(query, provider.client, provider.tracks);
                             },
                           );
                         }).toList(),
@@ -199,8 +199,8 @@ class _ScreenHomeState extends State<ScreenHome> {
                   
                 Expanded(
                   child: RefreshIndicator(
-                    onRefresh: () => _performSearch(_currentQuery, provider.client),
-                    child: _tracks.isEmpty && !_isLoading
+                    onRefresh: () => _performSearch(_currentQuery, provider.client, provider.tracks),
+                    child: provider.tracks.isEmpty && !_isLoading
                       ? const Center(
                           child: Text(
                             'Поиск ничего не дал...\nПопробуй другое название',
@@ -211,13 +211,13 @@ class _ScreenHomeState extends State<ScreenHome> {
                       : ListView.builder(
                         padding: EdgeInsets.symmetric(horizontal: 16),
                           controller: _scrollController,
-                          itemCount: _tracks.length + (_isLoading || _hasMore ? 1 : 0),
+                          itemCount: provider.tracks.length + (_isLoading || _hasMore ? 1 : 0),
                           itemBuilder: (context, i) {
-                            if (i == _tracks.length) {
+                            if (i == provider.tracks.length) {
                               
                               if (!_isLoading && _hasMore) {
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  _loadNextPage();
+                                  _loadNextPage(provider.tracks);
                                 });
                               }
                               return const Padding(
@@ -226,7 +226,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                               );
                             }
                 
-                            final track = _tracks[i];
+                            final track = provider.tracks[i];
                             final isPlaying = provider.currentTrack?.id == track.id;
                 
                             return Container(
@@ -263,21 +263,22 @@ class _ScreenHomeState extends State<ScreenHome> {
                 ),
               ],
             ),
-            Align(
-              alignment: AlignmentGeometry.bottomCenter,
-              child: AnimatedOpacity(
-                  opacity: provider.currentTrack != null ? 1 : 0,
-                  duration: Duration(milliseconds: 1050),
-                  child: AnimatedSlide(
-                    offset: provider.currentTrack != null ? Offset(0, 0) : Offset(0, 10),
-                    duration: Duration(milliseconds: 550),
-                    curve: Curves.ease,
-                    child: provider.currentTrack != null 
-                        ? MiniPlayer() 
-                        : SizedBox.shrink(),
+            if (!hideMiniApp)
+              Align(
+                alignment: AlignmentGeometry.bottomCenter,
+                child: AnimatedOpacity(
+                    opacity: provider.currentTrack != null ? 1 : 0,
+                    duration: Duration(milliseconds: 1050),
+                    child: AnimatedSlide(
+                      offset: provider.currentTrack != null ? Offset(0, 0) : Offset(0, 10),
+                      duration: Duration(milliseconds: 550),
+                      curve: Curves.ease,
+                      child: provider.currentTrack != null 
+                          ? MiniPlayer()
+                          : SizedBox.shrink(),
+                    ),
                   ),
-                ),
-            )
+              )
           ],
         ),
       );

@@ -6,17 +6,32 @@ class PlayerProvider extends ChangeNotifier {
   final _client = SoundcloudClient();
   final _player = AudioPlayer();
   TrackSearchResult? _currentTrack;
+  final List<TrackSearchResult> _tracks = [];
   
   SoundcloudClient get client => _client;
   AudioPlayer get player => _player;
   TrackSearchResult? get currentTrack => _currentTrack;
+  List<TrackSearchResult> get tracks => _tracks;
 
   PlayerProvider() {
-    _player.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed &&
-          _player.playing) {
-        print("Музыка закончилась!");
-        _currentTrack = null;
+    _player.playerStateStream.listen((state) async {
+      if (state.processingState == ProcessingState.completed && _player.playing) {
+        if (_currentTrack == null) return;
+        final indexTrack = _tracks.indexWhere((tr) => tr.id == _currentTrack!.id);
+        if (indexTrack == -1) return;
+
+        final nextIndexTrack = indexTrack + 1;
+
+        _currentTrack = _tracks[nextIndexTrack];
+        final streams = await _client.tracks.getStreams(_currentTrack!.id);
+
+        final mp3 = streams.firstWhere(
+          (s) => s.container == 'mpeg',
+          orElse: () => throw Exception('Нет MP3 потока'),
+        );
+
+        await setUrlPlayer(mp3.url);
+        await playPlayer();
         notifyListeners();
       }
     });
