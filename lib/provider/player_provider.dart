@@ -5,6 +5,7 @@ import 'package:soundcloud_explode_dart/soundcloud_explode_dart.dart';
 class PlayerProvider extends ChangeNotifier {
   final _client = SoundcloudClient();
   final _player = AudioPlayer();
+
   TrackSearchResult? _currentTrack;
   final List<TrackSearchResult> _tracks = [];
   bool _hideMiniApp = false;
@@ -16,6 +17,7 @@ class PlayerProvider extends ChangeNotifier {
   bool get hideMiniApp => _hideMiniApp;
 
   PlayerProvider() {
+    _player.setVolume(0.7);
     _player.playerStateStream.listen((state) async {
       if (state.processingState == ProcessingState.completed && _player.playing) {
         if (_currentTrack == null) return;
@@ -44,6 +46,11 @@ class PlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setVolume(double volume) {
+    _player.setVolume(volume.clamp(0.0, 1.0));
+    notifyListeners();
+  }
+
 
   set currentTrack(TrackSearchResult ct) {
     _currentTrack = ct;
@@ -61,7 +68,7 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Future<void> setLoopModePlayer(LoopMode mode) async {
-    player.setLoopMode(mode);
+    _player.setLoopMode(mode);
     notifyListeners();
   }
 
@@ -76,7 +83,7 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   Future<void> setUrlPlayer(String url) async {
-    await player.setUrl(url);
+    await _player.setUrl(url);
     notifyListeners();
   }
 

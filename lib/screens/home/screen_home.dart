@@ -155,12 +155,13 @@ class _ScreenHomeState extends State<ScreenHome> {
             controller: _searchController,
             textInputAction: TextInputAction.search,
             style: const TextStyle(color: Colors.white),
+            cursorColor: Colors.white,
             decoration: InputDecoration(
               hintText: 'Найти трек...',
               hintStyle: const TextStyle(color: Colors.white60),
               prefixIcon: const Icon(Icons.search, color: Colors.white70),
               filled: true,
-              fillColor: const Color.fromARGB(94, 28, 28, 42),
+              fillColor: const Color.fromARGB(94, 32, 32, 32),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(32),
                 borderSide: BorderSide.none,
@@ -178,6 +179,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               children: [
                 if (_searchHistory.isNotEmpty)
                   Container(
+                    color: Colors.transparent,
                     padding: EdgeInsets.only(top: 12, bottom: 4),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -203,18 +205,23 @@ class _ScreenHomeState extends State<ScreenHome> {
                     child: provider.tracks.isEmpty && !_isLoading
                       ? const Center(
                           child: Text(
-                            'Поиск ничего не дал...\nПопробуй другое название',
+                            'Поиск ничего не дал\nПопробуйте другое название',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.white54, fontSize: 16),
                           ),
                         )
                       : ListView.builder(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
+                          padding: EdgeInsets.only(
+                            left: 16, 
+                            right: 16,
+                            bottom: provider.currentTrack != null
+                              ? (provider.hideMiniApp ? 70 : 240)
+                              : 0,
+                          ),
                           controller: _scrollController,
                           itemCount: provider.tracks.length + (_isLoading || _hasMore ? 1 : 0),
                           itemBuilder: (context, i) {
                             if (i == provider.tracks.length) {
-                              
                               if (!_isLoading && _hasMore) {
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   _loadNextPage(provider.tracks);
@@ -232,14 +239,14 @@ class _ScreenHomeState extends State<ScreenHome> {
                             return Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(15),
-                                color: isPlaying ? 
-                                const Color.fromARGB(134, 43, 36, 76) : 
-                                const Color.fromARGB(134, 57, 56, 61),
+                                color: isPlaying ?
+                                const Color.fromARGB(103, 31, 31, 31) : 
+                                const Color.fromARGB(133, 56, 55, 59),
                               ),
                               margin: const EdgeInsets.symmetric(vertical: 4),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: const Color(0xFF2A2A3A),
+                                  backgroundColor: const Color.fromARGB(120, 56, 55, 59),
                                   child: Text('${i + 1}'),
                                 ),
                                 title: Text(
@@ -252,7 +259,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                                   style: const TextStyle(color: Colors.white70),
                                 ),
                                 trailing: isPlaying
-                                    ? const Icon(CupertinoIcons.speaker_2_fill, color: Color(0xFF7C5CFF))
+                                    ? const Icon(CupertinoIcons.speaker_2_fill, color: Color.fromARGB(255, 255, 255, 255))
                                     : null,
                                 onTap: () => _playTrack(track, provider),
                               ),
@@ -268,14 +275,14 @@ class _ScreenHomeState extends State<ScreenHome> {
               alignment: Alignment.bottomCenter,
               child: AnimatedOpacity(
                 opacity: provider.currentTrack != null ? 1 : 0,
-                duration: const Duration(milliseconds: 1050),
+                duration: const Duration(milliseconds: 650),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 550),
                   curve: Curves.ease,
                   transform: Matrix4.translationValues(
                     0,
                     provider.currentTrack != null
-                        ? (provider.hideMiniApp ? 175 : 0)
+                        ? (provider.hideMiniApp ? 168 : 0)
                         : 100,
                     0,
                   ),
