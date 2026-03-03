@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -53,10 +52,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
           style: ButtonStyle(
             shape: WidgetStateProperty.all(
               RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
             backgroundColor: WidgetStateProperty.all(
@@ -79,7 +75,10 @@ class _MiniPlayerState extends State<MiniPlayer> {
             children: [
               Text(
                 provider.currentTrack!.title,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
