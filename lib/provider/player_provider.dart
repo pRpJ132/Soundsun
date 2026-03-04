@@ -94,6 +94,46 @@ class PlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> lastTrack() async {
+    pausePlayer();
+    final indexTrack = _tracks.indexWhere((tr) => tr.id == _currentTrack!.id);
+    if (indexTrack == -1) return;
+
+    final nextIndexTrack = indexTrack - 1;
+
+    _currentTrack = _tracks[nextIndexTrack];
+    final streams = await _client.tracks.getStreams(_currentTrack!.id);
+
+    final mp3 = streams.firstWhere(
+      (s) => s.container == 'mpeg',
+      orElse: () => throw Exception('Нет MP3 потока'),
+    );
+
+    await setUrlPlayer(mp3.url);
+    await playPlayer();
+    notifyListeners();
+  }
+
+  Future<void> nextTrack() async {
+    pausePlayer();
+    final indexTrack = _tracks.indexWhere((tr) => tr.id == _currentTrack!.id);
+    if (indexTrack == -1) return;
+
+    final nextIndexTrack = indexTrack + 1;
+
+    _currentTrack = _tracks[nextIndexTrack];
+    final streams = await _client.tracks.getStreams(_currentTrack!.id);
+
+    final mp3 = streams.firstWhere(
+      (s) => s.container == 'mpeg',
+      orElse: () => throw Exception('Нет MP3 потока'),
+    );
+
+    await setUrlPlayer(mp3.url);
+    await playPlayer();
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _player.dispose();

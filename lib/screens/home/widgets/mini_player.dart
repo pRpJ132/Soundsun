@@ -264,6 +264,23 @@ class _MiniPlayerState extends State<MiniPlayer>
                             
                         return Column(
                           children: [
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: IconButton(
+                                padding: EdgeInsets.only(right: 18),
+                                iconSize: 34,
+                                icon: Icon(
+                                  Icons.repeat,
+                                  color: isLooping
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.55),
+                                ),
+                                onPressed: () {
+                                  setState(() => isLooping = !isLooping);
+                                  provider.setLoopModePlayer(isLooping ? LoopMode.one : LoopMode.off);
+                                },
+                              ),
+                            ),
                             SliderTheme(
                               data: SliderThemeData(
                                 trackHeight: 4,
@@ -325,38 +342,52 @@ class _MiniPlayerState extends State<MiniPlayer>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          iconSize: 48,
+                          iconSize: 28,
                           padding: const EdgeInsets.all(12),
                           icon: Icon(
-                            provider.player.playing ? CupertinoIcons.pause_solid : CupertinoIcons.play_arrow_solid,
-                            color: provider.player.playing 
-                              ? const Color.fromARGB(174, 255, 255, 255)
-                              : Colors.white,
+                            CupertinoIcons.backward_end_fill,
+                            color: Colors.white,
                           ),
-                          onPressed: () async {
-                            if (provider.player.playing) {
-                              await provider.pausePlayer();
-                            } else {
-                              await provider.playPlayer();
-                            }
-                            if (mounted) setState(() {});
+                          onPressed: () => provider.lastTrack(),
+                        ),
+
+                        StreamBuilder<bool>(
+                          stream: provider.player.playingStream,
+                          initialData: provider.player.playing,
+                          builder: (context, snapshot) {
+                            final isPlaying = snapshot.data ?? false;
+
+                            return IconButton(
+                              iconSize: 48,
+                              padding: const EdgeInsets.all(12),
+                              icon: Icon(
+                                isPlaying
+                                    ? CupertinoIcons.pause_solid
+                                    : CupertinoIcons.play_arrow_solid,
+                                color: isPlaying
+                                    ? const Color.fromARGB(174, 255, 255, 255)
+                                    : Colors.white,
+                              ),
+                              onPressed: () async {
+                                isPlaying
+                                    ? await provider.pausePlayer()
+                                    : await provider.playPlayer();
+                              },
+                            );
                           },
                         ),
-                            
-                        const SizedBox(width: 32),
-                            
-                        IconButton(
-                          iconSize: 34,
-                          icon: Icon(
-                            Icons.repeat,
-                            color: isLooping
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.55),
+
+                        Transform.rotate(
+                          angle: 3.1415926535,
+                          child: IconButton(
+                            iconSize: 28,
+                            padding: const EdgeInsets.all(12),
+                            icon: const Icon(
+                              CupertinoIcons.backward_end_fill,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => provider.nextTrack(),
                           ),
-                          onPressed: () {
-                            setState(() => isLooping = !isLooping);
-                            provider.setLoopModePlayer(isLooping ? LoopMode.one : LoopMode.off);
-                          },
                         ),
                             
                         const SizedBox(width: 24),
