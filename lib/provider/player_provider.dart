@@ -9,12 +9,14 @@ class PlayerProvider extends ChangeNotifier {
   TrackSearchResult? _currentTrack;
   final List<TrackSearchResult> _tracks = [];
   bool _hideMiniApp = false;
+  bool _openMiniApp = false;
   
   SoundcloudClient get client => _client;
   AudioPlayer get player => _player;
   TrackSearchResult? get currentTrack => _currentTrack;
   List<TrackSearchResult> get tracks => _tracks;
   bool get hideMiniApp => _hideMiniApp;
+  bool get openMiniApp => _openMiniApp;
 
   PlayerProvider() {
     _player.setVolume(0.7);
@@ -43,6 +45,11 @@ class PlayerProvider extends ChangeNotifier {
 
   set hideMiniApp(bool value) {
     _hideMiniApp = value;
+    notifyListeners();
+  }
+
+  set openMiniApp(bool value) {
+    _openMiniApp = value;
     notifyListeners();
   }
 

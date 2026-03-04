@@ -60,7 +60,7 @@ class HomePage extends StatelessWidget {
               speed: 0,
               size: MediaQuery.sizeOf(context),
               sizeD: 22,
-              color: Colors.red,
+              color: const Color.fromARGB(255, 10, 168, 236),
             ),
 
             ScreenHome()
