@@ -80,7 +80,7 @@ class _MiniPlayerState extends State<MiniPlayer>
         const SizedBox(height: 58),
         LiquidGlassLayer(
           settings: const LiquidGlassSettings(
-            blur: 5,
+            blur: 3.5,
             thickness: 25,
             ambientStrength: 2,
             lightIntensity: 0.1,
@@ -127,13 +127,13 @@ class _MiniPlayerState extends State<MiniPlayer>
     
         Flexible(
           child: LiquidGlassLayer(
-            settings: const LiquidGlassSettings(
-              blur: 5,
+            settings: LiquidGlassSettings(
+              blur: 3.5,
               thickness: 25,
               ambientStrength: 2,
-              lightIntensity: 0.1,
-              lightAngle: 0.2,
-              glassColor: Color.fromARGB(121, 77, 76, 76),
+              lightIntensity: 0.4,
+              lightAngle: 0.6,
+              glassColor: const Color.fromARGB(121, 77, 76, 76),
             ),
             child: LiquidGlass(
               shape: LiquidRoundedSuperellipse(
@@ -158,9 +158,9 @@ class _MiniPlayerState extends State<MiniPlayer>
                           shaderCallback: (bounds) {
                             return LinearGradient(
                               colors: const [
-                                Color.fromARGB(255, 193, 193, 193),
+                                Color.fromARGB(255, 210, 210, 210),
                                 Color.fromARGB(234, 255, 255, 255),
-                                Color.fromARGB(255, 193, 193, 193),
+                                Color.fromARGB(255, 210, 210, 210),
                               ],
                               stops: const [0.0, 0.7, 1.0],
                               begin: Alignment(-1 + 2 * _gradientAnimation.value, 0),
@@ -176,7 +176,8 @@ class _MiniPlayerState extends State<MiniPlayer>
                               shadows: [
                                 BoxShadow(
                                   color: Colors.white.withOpacity(0.4),
-                                  blurRadius: 40
+                                  blurRadius: 56 + _gradientAnimation.value * 2,
+                                  spreadRadius: 56 + _gradientAnimation.value * 0.2,
                                 ),
                               ],
                             ),
@@ -291,7 +292,7 @@ class _MiniPlayerState extends State<MiniPlayer>
                                       color: Colors.white.withOpacity(0.75),
                                       shadows: [
                                         BoxShadow(
-                                          color: Colors.white.withOpacity(0.8),
+                                          color: Colors.white,
                                           blurRadius: 40
                                         ),
                                       ],
@@ -304,7 +305,7 @@ class _MiniPlayerState extends State<MiniPlayer>
                                       color: Colors.white.withOpacity(0.75),
                                       shadows: [
                                         BoxShadow(
-                                          color: Colors.white.withOpacity(0.8),
+                                          color: Colors.white,
                                           blurRadius: 40
                                         ),
                                       ],

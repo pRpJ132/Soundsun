@@ -141,7 +141,9 @@ class _ScreenHomeState extends State<ScreenHome> {
     super.dispose();
   }
 
-  bool hideInputSearch = false;
+  bool hideInputSearch = true;
+  bool hideHistory = false;
+  bool hideTracks= false;
 
   @override
   Widget build(BuildContext context) {
@@ -155,11 +157,13 @@ class _ScreenHomeState extends State<ScreenHome> {
           surfaceTintColor: Colors.transparent,
           title: AnimatedOpacity(
             opacity: provider.openMiniApp ? 0 : 1,
-            onEnd: () => setState(() {
-              provider.openMiniApp ? hideInputSearch = true : hideInputSearch = false;
-            }),
+            onEnd: () => {
+              provider.openMiniApp ? hideInputSearch = false : hideInputSearch = true,
+              setState(() {}),
+            },
             duration: const Duration(milliseconds: 350),
-            child: !hideInputSearch ? TextField(
+            child: TextField(
+              enabled: hideInputSearch,
               controller: _searchController,
               textInputAction: TextInputAction.search,
               style: const TextStyle(color: Colors.white),
@@ -179,7 +183,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                 _performSearch(v.trim(), provider.client, provider.tracks);
                 FocusScope.of(context).unfocus();
               },
-            ) : null,
+            ),
           ),
         ),
         body: Stack(
@@ -189,6 +193,10 @@ class _ScreenHomeState extends State<ScreenHome> {
                 if (_searchHistory.isNotEmpty)
                   AnimatedOpacity(
                     opacity: provider.openMiniApp ? 0 : 1,
+                    onEnd: () => {
+                      provider.openMiniApp ? hideHistory = true : hideHistory = false,
+                      setState(() {}),
+                    },
                     duration: const Duration(milliseconds: 350),
                     child: Container(
                       color: Colors.transparent,
@@ -200,11 +208,11 @@ class _ScreenHomeState extends State<ScreenHome> {
                           mainAxisSize: MainAxisSize.min,
                           children: _searchHistory.map((query) {
                             return ElevatedButton(
-                              child: Text(query, style: const TextStyle(color: Colors.white70)),
-                              onPressed: () {
+                              onPressed: !hideHistory ? () {
                                 _searchController.text = query;
                                 _performSearch(query, provider.client, provider.tracks);
-                              },
+                              } : () => {},
+                              child: Text(query, style: const TextStyle(color: Colors.white70)),
                             );
                           }).toList(),
                         ),
@@ -214,6 +222,10 @@ class _ScreenHomeState extends State<ScreenHome> {
                 
                 Expanded(
                   child: AnimatedOpacity(
+                    onEnd: () => {
+                      provider.openMiniApp ? hideTracks = true : hideTracks = false,
+                      setState(() {}),
+                    },
                     opacity: provider.openMiniApp ? 0 : 1,
                     duration: const Duration(milliseconds: 350),
                     child: RefreshIndicator(
@@ -318,11 +330,11 @@ class _ScreenHomeState extends State<ScreenHome> {
                                   trailing: isPlaying
                                       ? const Icon(CupertinoIcons.speaker_2_fill, color: Color.fromARGB(255, 255, 255, 255))
                                       : null,
-                                  onTap: () => {
+                                  onTap: !hideTracks ? () => {
                                     provider.openMiniApp = false,
                                     provider.hideMiniApp = false,
                                     _playTrack(track, provider)
-                                  },
+                                  } : () => {},
                                 ),
                               );
                             },
