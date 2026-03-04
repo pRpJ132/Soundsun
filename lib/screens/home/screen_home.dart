@@ -150,6 +150,7 @@ class _ScreenHomeState extends State<ScreenHome> {
     final provider = context.watch<PlayerProvider>();
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color.fromARGB(99, 0, 0, 0),
         appBar: AppBar(
           backgroundColor: Colors.transparent,

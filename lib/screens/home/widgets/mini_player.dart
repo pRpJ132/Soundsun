@@ -210,6 +210,7 @@ class _MiniPlayerState extends State<MiniPlayer>
                           ),
                           child: SizedBox(
                             width: 140,
+                            height: 140,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: provider.currentTrack!.artworkUrl != null
