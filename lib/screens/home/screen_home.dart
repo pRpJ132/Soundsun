@@ -354,7 +354,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   0,
                   provider.currentTrack != null
                       ? (provider.openMiniApp ? -80
-                        :  provider.hideMiniApp ? 305 : 0)
+                        :  provider.hideMiniApp ? 355 : 0)
                       : 100,
                   0,
                 ),
