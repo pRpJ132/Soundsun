@@ -163,7 +163,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               setState(() {}),
             },
             duration: const Duration(milliseconds: 350),
-            child: TextField(
+            child: !provider.isMusicPlaylist ? TextField(
               enabled: hideInputSearch,
               controller: _searchController,
               textInputAction: TextInputAction.search,
@@ -184,59 +184,82 @@ class _ScreenHomeState extends State<ScreenHome> {
                 _performSearch(v.trim(), provider.client, provider.tracks);
                 FocusScope.of(context).unfocus();
               },
-            ),
+            ) : SizedBox.shrink(),
           ),
+          actions: [
+            IconButton(
+              onPressed: () => {
+                  provider.setTracks([]),
+                  setState(() => provider.isMusicPlaylist = !provider.isMusicPlaylist),
+              }, 
+              icon: Icon(provider.isMusicPlaylist ? Icons.queue_music : Icons.library_music)
+            ),
+          ]
         ),
         body: Stack(
           children: [
             Column(
               children: [
-                if (_searchHistory.isNotEmpty)
-                  AnimatedOpacity(
-                    opacity: provider.openMiniApp ? 0 : 1,
-                    onEnd: () => {
-                      provider.openMiniApp ? hideHistory = true : hideHistory = false,
-                      setState(() {}),
-                    },
-                    duration: const Duration(milliseconds: 350),
-                    child: Container(
-                      color: Colors.transparent,
-                      padding: EdgeInsets.only(top: 12, bottom: 4),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          spacing: 8,
-                          mainAxisSize: MainAxisSize.min,
-                          children: _searchHistory.map((query) {
-                            return ElevatedButton(
-                              onPressed: !hideHistory ? () {
-                                _searchController.text = query;
-                                _performSearch(query, provider.client, provider.tracks);
-                              } : () => {},
-                              child: Text(query, style: const TextStyle(color: Colors.white70)),
-                            );
-                          }).toList(),
-                        ),
+                AnimatedOpacity(
+                  opacity: provider.openMiniApp ? 0 : 1,
+                  onEnd: () => {
+                    setState(() => provider.openMiniApp ? hideHistory = true : hideHistory = false),
+                  },
+                  duration: const Duration(milliseconds: 350),
+                  child: Container(
+                    color: Colors.transparent,
+                    padding: EdgeInsets.only(top: 12, bottom: 4),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        spacing: 8,
+                        mainAxisSize: MainAxisSize.min,
+                        children: !provider.isMusicPlaylist 
+                        
+                        ? _searchHistory.map((query) {
+                          return ElevatedButton(
+                            onPressed: !hideHistory ? () {
+                              _searchController.text = query;
+                              _performSearch(query, provider.client, provider.tracks);
+                            } : () => {},
+                            child: Text(query, style: const TextStyle(color: Colors.white70)),
+                          );
+                        }).toList() 
+                        
+                        : provider.playlistUser.keys.map((playlistName) {
+                          return ElevatedButton(
+                            onPressed: () {
+                              if (provider.playlistUser[playlistName]!.isNotEmpty) {
+                                provider.currentMusicPlaylist = playlistName;
+                                provider.setTracks(provider.playlistUser[playlistName]!);
+                              }
+                            },
+                            child: Text(
+                              playlistName,
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
                   ),
+                ),
                 
                 Expanded(
                   child: AnimatedOpacity(
                     onEnd: () => {
-                      provider.openMiniApp ? hideTracks = true : hideTracks = false,
-                      setState(() {}),
+                      setState(() => provider.openMiniApp ? hideTracks = true : hideTracks = false,),
                     },
                     opacity: provider.openMiniApp ? 0 : 1,
                     duration: const Duration(milliseconds: 350),
                     child: RefreshIndicator(
-                      onRefresh: () => _performSearch(_currentQuery, provider.client, provider.tracks),
+                      onRefresh: !provider.isMusicPlaylist ? () => _performSearch(_currentQuery, provider.client, provider.tracks) : () async => {},
                       child: provider.tracks.isEmpty && !_isLoading
-                        ? const Center(
+                        ? Center(
                             child: Text(
-                              'Поиск ничего не дал\nПопробуйте другое название',
+                              !provider.isMusicPlaylist ? 'Поиск ничего не дал\nПопробуйте другое название' : 'Плей лист пустой\nПопробуйте создать новый плей лист',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white54, fontSize: 16),
+                              style: const TextStyle(color: Colors.white54, fontSize: 16),
                             ),
                           )
                         : ListView.builder(
@@ -248,7 +271,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                                 : 0,
                             ),
                             controller: _scrollController,
-                            itemCount: provider.tracks.length + (_isLoading || _hasMore ? 1 : 0),
+                            itemCount: provider.isMusicPlaylist ? provider.tracks.length : provider.tracks.length + (_isLoading || _hasMore ? 1 : 0),
                             itemBuilder: (context, i) {
                               if (i == provider.tracks.length) {
                                 if (!_isLoading && _hasMore) {

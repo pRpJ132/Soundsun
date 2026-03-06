@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:provider/provider.dart';
 import 'package:soundsun/provider/player_provider.dart';
+import 'package:soundsun/screens/home/diolog/diolog_playlist.dart';
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
@@ -265,22 +266,56 @@ class _MiniPlayerState extends State<MiniPlayer>
                             
                         return Column(
                           children: [
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: IconButton(
-                                padding: EdgeInsets.only(right: 18),
-                                iconSize: 34,
-                                icon: Icon(
-                                  Icons.repeat,
-                                  color: isLooping
-                                      ? Colors.white
-                                      : Colors.white.withOpacity(0.55),
+                            Row(
+                              children: [
+                                Builder(
+                                  builder: (context) {
+                                    bool isFavorite = false;
+                                    if (provider.currentTrack == null) isFavorite = false;
+
+                                    for (final playlist in provider.playlistUser.values) {
+                                      if (playlist.any((t) => t.id == provider.currentTrack!.id)) {
+                                        isFavorite = true;
+                                      }
+                                    }
+
+                                    return ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        overlayColor: const Color.fromARGB(99, 158, 158, 158),
+                                        elevation: 0,
+                                      ),
+                                      label: Icon(
+                                        isFavorite
+                                            ? Icons.favorite
+                                            : Icons.favorite_outline_sharp,
+                                        size: 34,
+                                        color: const Color.fromARGB(163, 255, 255, 255),
+                                      ),
+                                      onPressed: () => createShowDialog(context, provider),
+                                    );
+                                  }
                                 ),
-                                onPressed: () {
-                                  setState(() => isLooping = !isLooping);
-                                  provider.setLoopModePlayer(isLooping ? LoopMode.one : LoopMode.off);
-                                },
-                              ),
+                                Spacer(),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    overlayColor: const Color.fromARGB(99, 158, 158, 158),
+                                    elevation: 0,
+                                  ),
+                                  onPressed: () {
+                                    setState(() => isLooping = !isLooping);
+                                    provider.setLoopModePlayer(isLooping ? LoopMode.one : LoopMode.off);
+                                  }, 
+                                  label: Icon(
+                                    Icons.repeat,
+                                    color: isLooping
+                                        ? Colors.white
+                                        : Colors.white.withOpacity(0.55),
+                                    size: 34,
+                                  ),
+                                ),
+                              ],
                             ),
                             SliderTheme(
                               data: SliderThemeData(
