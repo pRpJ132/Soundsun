@@ -159,8 +159,9 @@ class _ScreenHomeState extends State<ScreenHome> {
           title: AnimatedOpacity(
             opacity: provider.openMiniApp ? 0 : 1,
             onEnd: () => {
-              provider.openMiniApp ? hideInputSearch = false : hideInputSearch = true,
-              setState(() {}),
+              setState(() =>  
+                provider.openMiniApp ? hideInputSearch = false : hideInputSearch = true,
+              ),
             },
             duration: const Duration(milliseconds: 350),
             child: !provider.isMusicPlaylist ? TextField(
@@ -187,12 +188,16 @@ class _ScreenHomeState extends State<ScreenHome> {
             ) : SizedBox.shrink(),
           ),
           actions: [
-            IconButton(
-              onPressed: () => {
-                  provider.setTracks([]),
-                  setState(() => provider.isMusicPlaylist = !provider.isMusicPlaylist),
-              }, 
-              icon: Icon(provider.isMusicPlaylist ? Icons.queue_music : Icons.library_music)
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 350),
+              opacity: provider.openMiniApp ? 0 : 1,
+              child: IconButton(
+                onPressed: () => {
+                    provider.setTracks([]),
+                    setState(() => provider.isMusicPlaylist = !provider.isMusicPlaylist),
+                }, 
+                icon: Icon(provider.isMusicPlaylist ? Icons.queue_music : Icons.library_music)
+              ),
             ),
           ]
         ),
@@ -202,9 +207,6 @@ class _ScreenHomeState extends State<ScreenHome> {
               children: [
                 AnimatedOpacity(
                   opacity: provider.openMiniApp ? 0 : 1,
-                  onEnd: () => {
-                    setState(() => provider.openMiniApp ? hideHistory = true : hideHistory = false),
-                  },
                   duration: const Duration(milliseconds: 350),
                   child: Container(
                     color: Colors.transparent,
@@ -377,7 +379,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                 transform: Matrix4.translationValues(
                   0,
                   provider.currentTrack != null
-                      ? (provider.openMiniApp ? -80
+                      ? (provider.openMiniApp ? -60
                         :  provider.hideMiniApp ? 355 : 0)
                       : 100,
                   0,
