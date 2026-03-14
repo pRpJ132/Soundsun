@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +10,181 @@ import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:provider/provider.dart';
 import 'package:soundsun/provider/player_provider.dart';
 import 'package:soundsun/screens/home/diolog/diolog_playlist.dart';
+import 'package:http/http.dart' as http;
+
+class WaveformData {
+  final List<double> samples;
+
+  WaveformData({required this.samples});
+
+  factory WaveformData.fromJson(Map<String, dynamic> json) {
+    final raw = json['samples'] ?? [];
+    final samples = List<double>.from(raw.map((e) => (e as num).toDouble()));
+    return WaveformData(samples: samples);
+  }
+}
+
+class NeonWavePainter extends CustomPainter {
+  final List<double> samples;
+  final double progress;
+  final Color baseColor;
+  final PlayerProvider provider;
+
+  // Сохраняем состояние между кадрами
+  static List<WaveRegion>? _regions;
+  static double _smoothedAmp = 0.0;
+  static double _smoothedPulse = 0.0;
+  static double _slowPhase = 0.0;
+
+  NeonWavePainter({
+    required this.progress,
+    required this.samples,
+    this.baseColor = Colors.cyanAccent,
+    required this.provider,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxRadius = math.min(size.width, size.height) * 0.44;
+
+    double baseRadius = maxRadius * (0.65 + provider.player.volume * 1); // ← уменьшил влияние volume
+
+    double getAmp(int i) {
+      if (i < 0 || i >= samples.length) return 0.0;
+      return ((samples[i] - 60.0) / 80.0).clamp(0.0, 1.2);
+    }
+
+    final idx = (samples.length * progress).floor().clamp(0, samples.length - 1);
+
+    final rawAmp = getAmp(idx);
+    _smoothedAmp += (rawAmp - _smoothedAmp) * 0.2;
+    final currentAmp = _smoothedAmp.clamp(0.0, 1.2);
+
+    double rawPulse = 2.0;
+    const window = 14;
+    for (int i = 0; i < window && idx - i >= 0; i++) {
+      rawPulse += getAmp(idx - i);
+    }
+    rawPulse /= window;
+
+    _smoothedPulse += (rawPulse - _smoothedPulse) * 0.06;
+    final pulse = _smoothedPulse.clamp(0.0, 1.0);
+
+    baseRadius += pulse * rawAmp * 10;
+
+    // Медленная анимация формы
+    _slowPhase += 0.003;   // очень медленно
+
+    // Регионы — создаём только один раз
+    if (_regions == null) {
+      final initRnd = math.Random(42423242);
+      _regions = _generateRegions(initRnd, count: 4 + initRnd.nextInt(3));
+    }
+    final regions = _regions!;
+
+    final gradient = SweepGradient(
+      center: Alignment.center,
+      colors: [
+        baseColor.withOpacity(0.45),
+        baseColor.withOpacity(0.45),
+        baseColor.withOpacity(0.90),
+        baseColor.withOpacity(0.65),
+        baseColor.withOpacity(0.45),
+      ],
+      stops: const [0.0, 0.18, 0.45, 0.75, 1.0],
+    );
+
+    final fillPaint = Paint()
+      ..shader = gradient.createShader(Rect.fromCircle(center: center, radius: baseRadius * 1.5))
+      ..style = PaintingStyle.fill;
+
+    final strokePaint = Paint()
+      ..color = baseColor.withOpacity(0.95)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
+
+    final path = Path();
+    bool isFirst = true;
+
+    const step = 0.0004; // чуть больше точек → контур мягче
+
+    for (double a = 0; a < 2 * math.pi + step * 2; a += step) {
+      double wave = 2.0;
+
+      for (final region in regions) {
+        double da = (a - region.center - _slowPhase * 0.6).abs();
+        da = math.min(da, 2 * math.pi - da);
+        if (da < region.width / 2) {
+          final falloff = 0.8 - (da / (region.width / 2)).clamp(0.0, 1.0);
+          wave += falloff * region.strength * currentAmp;
+        }
+      }
+
+      double noise(double x) {
+        return math.sin(x) * 0.5 +
+                math.sin(x * 0.7 + 1.3) * 0.3 +
+                math.sin(x * 1.9 + 0.7) * 0.2;
+      }
+
+      final n = noise(a * 2 + _slowPhase * 4);
+      final distortion =
+          (math.sin(a * 17 + _slowPhase * 3) * 0.6 +
+          math.sin(a * 13 + _slowPhase * 5) * 0.3 +
+          n * 0.2) *
+          wave *
+          6;
+
+      double micro =
+        math.sin(a * 40 + _slowPhase * 15) *
+        currentAmp *
+        1.2;
+
+      final r = baseRadius + distortion + micro;
+
+      final x = center.dx + r * math.cos(a);
+      final y = center.dy + r * math.sin(a);
+
+      if (isFirst) {
+        path.moveTo(x, y);
+        isFirst = false;
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    canvas.drawPath(path, fillPaint);
+    canvas.drawPath(path, strokePaint);
+  }
+
+  List<WaveRegion> _generateRegions(math.Random rnd, {required int count}) {
+    final list = <WaveRegion>[];
+    for (int i = 0; i < count; i++) {
+      final center = rnd.nextDouble() * 2 * math.pi;
+      final widthRad = 0.8 + rnd.nextDouble() * 1.5;
+      final strength = 0.65 + rnd.nextDouble() * 0.8;
+      list.add(WaveRegion(center, widthRad, strength));
+    }
+    return list;
+  }
+
+  @override
+  bool shouldRepaint(covariant NeonWavePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.samples != samples ||
+        oldDelegate.baseColor != baseColor;
+  }
+}
+
+class WaveRegion {
+  final double center;
+  final double width;
+  final double strength;
+
+  WaveRegion(this.center, this.width, this.strength);
+}
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
@@ -22,7 +200,6 @@ class _MiniPlayerState extends State<MiniPlayer>
   StreamSubscription<Duration?>? _durationSub;
 
   late AnimationController _glowController;
-  late Animation<double> _glowAnimation;
 
   late AnimationController _gradientController;
   late Animation<double> _gradientAnimation;
@@ -44,10 +221,6 @@ class _MiniPlayerState extends State<MiniPlayer>
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat(reverse: true);
-
-    _glowAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeIn),
-    );
 
     _gradientController = AnimationController(
       vsync: this,
@@ -71,6 +244,33 @@ class _MiniPlayerState extends State<MiniPlayer>
     final min = d.inMinutes.toString().padLeft(2, '0');
     final sec = (d.inSeconds % 60).toString().padLeft(2, '0');
     return '$min:$sec';
+  }
+
+  WaveformData? waveformData;
+
+  Future<void> loadWaveform(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = WaveformData.fromJson(jsonDecode(response.body));
+        setState(() {
+          waveformData = data;
+        });
+      } else {
+        print("Ошибка загрузки waveform: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Ошибка загрузки waveform: $e");
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = context.read<PlayerProvider>();
+    if (provider.currentTrack?.waveformUrl != null && waveformData == null) {
+      loadWaveform(provider.currentTrack!.waveformUrl);
+    }
   }
 
   @override
@@ -185,72 +385,53 @@ class _MiniPlayerState extends State<MiniPlayer>
                       ),
                 
                       const SizedBox(height: 10),
-                
-                      AnimatedBuilder(
-                        animation: _glowAnimation,
-                        builder: (context, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              boxShadow: [
-                                BoxShadow(
-                                  color: provider.openMiniApp ? const Color.fromARGB(255, 67, 62, 95).withOpacity(_glowAnimation.value * 0.7) : Colors.transparent,
-                                  blurRadius: 45 + _glowAnimation.value * 2,
-                                  spreadRadius: 1 + _glowAnimation.value * 0.2,
+
+                      StreamBuilder<Duration>(
+                        stream: provider.player.positionStream,
+                        builder: (context, snapshot) {
+                          final pos = snapshot.data ?? Duration.zero;
+                          final dur = totalDuration ?? Duration.zero;
+                          final progress = dur.inMilliseconds > 0
+                              ? pos.inMilliseconds / dur.inMilliseconds
+                              : 0.0;
+
+                          if (waveformData == null) return const SizedBox();
+
+                          return SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CustomPaint(
+                                  size: Size.square(200),
+                                  painter: NeonWavePainter(
+                                    progress: progress,
+                                    samples: waveformData!.samples,
+                                    provider: provider,
+                                  ),
                                 ),
-                                BoxShadow(
-                                  color: provider.openMiniApp ? const Color.fromARGB(180, 220, 220, 220).withOpacity(_glowAnimation.value * 0.2) : Colors.transparent,
-                                  blurRadius: 100,
-                                  spreadRadius: 18,
-                                ),
-                              ]
-                            ),
-                            child: SizedBox(
-                              width: 140,
-                              height: 140,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: provider.currentTrack!.artworkUrl != null
-                                    ? Image.network(
-                                        provider.currentTrack!.artworkUrl.toString(),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Container(
-                                              color: Colors.grey[800],
-                                              child: const Icon(
-                                                Icons.music_note_rounded,
-                                              )
-                                          );
-                                        },
-                                        loadingBuilder: (context, child, loadingProgress) {
-                                          if (loadingProgress == null) return child;
-                                          return Container(
-                                            color: Colors.grey[900],
-                                            child: const Center(
-                                              child: SizedBox(
-                                                width: 24,
-                                                height: 24,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      )
-                                    : Container(
-                                        color: Colors.grey[800],
-                                        child: const Icon(
-                                          Icons.music_note_rounded,
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: provider.currentTrack!.artworkUrl != null
+                                      ? Image.network(
+                                          provider.currentTrack!.artworkUrl.toString(),
+                                          fit: BoxFit.cover,
+                                          width: 140,
+                                          height: 140,
                                         )
-                                    )
-                              )
+                                      : Container(
+                                          width: 140,
+                                          height: 140,
+                                          color: Colors.grey[800],
+                                          child: const Icon(Icons.music_note_rounded),
+                                        ),
+                                ),
+                              ],
                             ),
                           );
-                        }
+                        },
                       ),
-                              
-                      const SizedBox(height: 0),
                               
                       StreamBuilder<Duration>(
                         stream: provider.player.positionStream,
@@ -460,5 +641,42 @@ class _MiniPlayerState extends State<MiniPlayer>
         ),
       ),
     );
+  }
+}
+
+
+class AudioWavePainter extends CustomPainter {
+  final double progress;
+  final double amplitude;
+
+  AudioWavePainter(this.progress, this.amplitude);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.6)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+
+    double centerY = size.height / 2;
+    double waveHeight = 10 + amplitude * 25;
+
+    path.moveTo(0, centerY);
+
+    for (double x = 0; x <= size.width; x++) {
+      double y =
+          centerY + sin((x * 0.05) + progress * 8) * waveHeight;
+      path.lineTo(x, y);
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant AudioWavePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.amplitude != amplitude;
   }
 }
