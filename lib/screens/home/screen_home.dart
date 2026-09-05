@@ -288,18 +288,19 @@ class _ScreenHomeState extends State<ScreenHome> {
                               final track = provider.tracks[i];
                               final isPlaying = provider.currentTrack?.id == track.id;
                                       
-                              return Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.2)
-                                  ),
-                                  borderRadius: BorderRadius.circular(15),
-                                  color: !isPlaying ?
-                                  const Color.fromARGB(103, 31, 31, 31) : 
-                                  const Color.fromARGB(133, 56, 55, 59),
-                                ),
-                                margin: const EdgeInsets.symmetric(vertical: 4),
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
                                 child: ListTile(
+                                  splashColor: Color.fromARGB(133, 77, 77, 78),
+                                  tileColor: !isPlaying ?
+                                    const Color.fromARGB(103, 31, 31, 31) : 
+                                    const Color.fromARGB(133, 56, 55, 59),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                    side: BorderSide(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                    ),
+                                  ),
                                   leading: SizedBox(
                                     width: 50,
                                     height: 50,
