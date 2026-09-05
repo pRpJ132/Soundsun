@@ -1,8 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:soundcloud_explode_dart/soundcloud_explode_dart.dart';
 import 'package:soundsun/provider/player_provider.dart';

@@ -108,8 +108,6 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   void setTracks(List<TrackSearchResult> newTracks) {
-    // Important: copy items, do NOT keep external list reference.
-    // Otherwise clearing `_tracks` would also clear the playlist list.
     if (identical(newTracks, _tracks)) return;
     _tracks
       ..clear()
